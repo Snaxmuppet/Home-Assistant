@@ -52,18 +52,11 @@ http:
 
 # ------------------------------------------------------------
 # MQTT Sensors
-# Sensors whose state is published to MQTT topics, primarily
-# used for Octopus Agile pricing and hot-tub (spa) control.
+# Sensors whose state is published to MQTT topics, used for
+# hot-tub (spa) control.
 # ------------------------------------------------------------
 mqtt:
   sensor:
-    # Current Octopus Agile electricity unit price (pence per kWh)
-    - name: "Current Agile Price"
-      unique_id: Current_Agile_Price
-      state_topic: "agile/currentPeriodPrice"
-      value_template: "{{ value }}"
-      unit_of_measurement: "p/kWh"
-
     # Spa operating mode as commanded by the Renewable Heat controller
     - name: "Spa RH Mode"
       unique_id: "Spa_RH_Mode"
@@ -87,12 +80,6 @@ mqtt:
     - name: "Spa Override"
       unique_id: "Spa_Override"
       state_topic: "spa/override"
-      value_template: "{{ value }}"
-
-    # Start timestamp of the current Octopus Agile half-hour pricing period
-    - name: "Current Period Start"
-      unique_id: "Current_Period_Start"
-      state_topic: "agile/currrentPeriodStart"
       value_template: "{{ value }}"
 
 # ------------------------------------------------------------
