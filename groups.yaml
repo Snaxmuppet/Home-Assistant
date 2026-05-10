@@ -8,7 +8,6 @@ Lounge Lights:
 Office Lights:
   name: All Office Lights
   entities:
-    - switch.office_magnifier
     - switch.office_main_light
 
 Kitchen Lights:
