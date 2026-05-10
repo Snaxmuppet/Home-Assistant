@@ -1,3 +1,14 @@
+- id: git_auto_commit
+  alias: "Git: Auto-commit config changes"
+  description: Commits and pushes any changed config files to GitHub every hour.
+  trigger:
+    - platform: time_pattern
+      minutes: "0"
+  condition: []
+  action:
+    - action: shell_command.git_auto_commit
+  mode: single
+
 - id: '1730317407231'
   alias: Kitchen Blind Position
   description: ''

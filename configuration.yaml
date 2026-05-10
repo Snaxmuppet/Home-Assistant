@@ -6,6 +6,12 @@
 default_config:
 
 # ------------------------------------------------------------
+# Shell Commands
+# ------------------------------------------------------------
+shell_command:
+  git_auto_commit: /config/auto_commit.sh
+
+# ------------------------------------------------------------
 # Frontend
 # Loads custom themes from the /themes folder and registers
 # extra JavaScript modules for UI enhancements (card-mod).
