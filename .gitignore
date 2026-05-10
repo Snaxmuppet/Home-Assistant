@@ -53,6 +53,9 @@ zigbee2mqtt/migration*.log
 # Watchman generated report
 watchman_report.txt
 
+# Generated logs
+logs/
+
 # TTS cache
 tts/
 

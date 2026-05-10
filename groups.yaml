@@ -17,12 +17,6 @@ Kitchen Lights:
     - switch.kitchen_1
     - switch.kitchen_2
 
-Christmas Lights:
-  name: All Christmas Lights
-  entities:
-    - switch.christmas_tree
-    - switch.christmas_star
-    - switch.christmas_snowman
 
 Day Lounge Side Lights:
   name: Side Lights

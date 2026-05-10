@@ -142,41 +142,7 @@
           seconds: 2
           milliseconds: 0
   mode: single
-- id: '1732377409715'
-  alias: Christmas Lights On Off 1
-  description: ''
-  triggers:
-  - trigger: sun
-    event: sunrise
-    offset: -01:00:00
-    id: 'on'
-  - trigger: time
-    at: '23:00:00'
-    id: 'off'
-  conditions: []
-  actions:
-  - choose:
-    - conditions:
-      - condition: trigger
-        id:
-        - 'on'
-      sequence:
-      - action: input_boolean.turn_on
-        metadata: {}
-        data: {}
-        target:
-          entity_id: input_boolean.christmas_lights
-    - conditions:
-      - condition: trigger
-        id:
-        - 'off'
-      sequence:
-      - action: input_boolean.turn_off
-        metadata: {}
-        data: {}
-        target:
-          entity_id: input_boolean.christmas_lights
-  mode: single
+
 - id: '1733233357490'
   alias: Office Lights on if occupied
   description: ''
@@ -448,74 +414,7 @@
       entity_id: 3416679a5eb6b76f3d2367bc62908fad
       domain: switch
   mode: single
-- id: '1763450416526'
-  alias: Christmas Lights Helper Action
-  description: ''
-  triggers:
-  - trigger: state
-    entity_id: input_boolean.christmas_lights
-    to: 'on'
-    id: 'on'
-  - trigger: state
-    entity_id: input_boolean.christmas_lights
-    to: 'off'
-    id: 'off'
-  actions:
-  - choose:
-    - conditions:
-      - condition: trigger
-        id: 'on'
-      - condition: or
-        conditions:
-        - condition: state
-          entity_id: switch.christmas_tree
-          state: 'off'
-        - condition: state
-          entity_id: switch.christmas_star
-          state: 'off'
-        - condition: state
-          entity_id: switch.christmas_snowman
-          state: 'off'
-      sequence:
-      - target:
-          entity_id:
-          - switch.christmas_tree
-          - switch.christmas_star
-          - switch.christmas_snowman
-        action: switch.turn_on
-        data: {}
-      - action: input_boolean.turn_on
-        metadata: {}
-        data: {}
-        target:
-          entity_id: input_boolean.christmas_lights
-    - conditions:
-      - condition: trigger
-        id: 'off'
-      - condition: or
-        conditions:
-        - condition: state
-          entity_id: switch.christmas_tree
-          state: 'on'
-        - condition: state
-          entity_id: switch.christmas_star
-          state: 'on'
-        - condition: state
-          entity_id: switch.christmas_snowman
-          state: 'on'
-      sequence:
-      - target:
-          entity_id:
-          - switch.christmas_tree
-          - switch.christmas_star
-          - switch.christmas_snowman
-        action: switch.turn_off
-      - action: input_boolean.turn_off
-        metadata: {}
-        data: {}
-        target:
-          entity_id: input_boolean.christmas_lights
-  mode: single
+
 - id: '1763971720960'
   alias: test 1
   description: ''
@@ -617,38 +516,7 @@
     target:
       entity_id: switch.garden_light
   mode: single
-- id: '1764094461515'
-  alias: Cycle Christmas Tree
-  description: ''
-  triggers:
-  - trigger: time
-    at: '14:00:00'
-    weekday:
-    - mon
-    - tue
-    - wed
-    - thu
-    - fri
-    - sat
-    - sun
-  conditions: []
-  actions:
-  - action: switch.turn_off
-    metadata: {}
-    data: {}
-    target:
-      entity_id: switch.christmas_tree
-  - delay:
-      hours: 0
-      minutes: 0
-      seconds: 10
-      milliseconds: 0
-  - action: switch.turn_on
-    metadata: {}
-    data: {}
-    target:
-      entity_id: switch.christmas_tree
-  mode: single
+
 - id: '1767075741419'
   alias: EcoFlow Charging Management - old
   description: Manages EcoFlow charging based on time, buttons, and SoC limits.
