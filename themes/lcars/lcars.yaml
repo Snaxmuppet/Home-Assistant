@@ -205,11 +205,8 @@
   # Text
   ha-card-header-color: var(--lcars-text-gray)
   primary-text-color: var(--lcars-text-gray)
-
-  # secondary-text-color: var(--lcars-text-gray)
-  secondary-text-color: var(--lcars-apricot)
-
-  text-primary-color: var(--lcars-apricot)
+  secondary-text-color: var(--lcars-text-gray)
+  text-primary-color: var(--lcars-text-gray)
   disabled-text-color: "#555"
   text-dark-color: var(--lcars-text-dark)
   # Sidebar Menu
@@ -2002,10 +1999,7 @@ LCARS Picard II:
   lcars-alert-color: var(--lcars-alert-red)
   # Header colors
   lcars-ui-app-header-background-color: "#272727"
-
-  # lcars-ui-app-header-text-color: var(--lcars-pearl)
-  lcars-ui-app-header-text-color: (--lcars-apricot)
-
+  lcars-ui-app-header-text-color: var(--lcars-pearl)
   lcars-ui-app-header-clock: var(--lcars-ui-tertiary)
   lcars-ui-sidebar-icon: var(--lcars-ui-secondary)
   lcars-ui-config-button: var(--lcars-apricot)
