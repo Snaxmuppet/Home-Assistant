@@ -1,0 +1,60 @@
+# Secrets — never commit
+secrets.yaml
+
+# Claude Code working directory
+.claude/
+
+# Backup / scratch copies (git is the history)
+*.bak
+*_old.yaml
+* - Copy.yaml
+
+# Databases
+*.db
+*.db-wal
+*.db-shm
+
+# Logs
+*.log
+*.log.*
+*.fault
+home-assistant.log*
+
+# Runtime / lock files
+.ha_run.lock
+
+# HA internal storage (auth tokens, device registry, etc.)
+.storage/
+
+# Cache and local data
+.cache/
+.local/
+.cloud/
+
+# Backups
+backups/
+
+# Python dependency cache
+deps/
+__pycache__/
+*.pyc
+
+# Solcast auto-regenerated forecast cache
+solcast_solar/
+
+# Zigbee2MQTT — keep only configuration.yaml
+zigbee2mqtt/database.db*
+zigbee2mqtt/log/
+zigbee2mqtt/state.json
+zigbee2mqtt/coordinator_backup.json
+zigbee2mqtt/configuration_backup*.yaml
+zigbee2mqtt/migration*.log
+
+# Watchman generated report
+watchman_report.txt
+
+# TTS cache
+tts/
+
+# Govee learned data (auto-generated)
+govee_learning.yaml

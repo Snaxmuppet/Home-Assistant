@@ -1,0 +1,115 @@
+external_url: https://192.168.1.219
+homeassistant:
+  enabled: true
+advanced:
+  network_key:
+    - 229
+    - 198
+    - 219
+    - 41
+    - 68
+    - 72
+    - 159
+    - 253
+    - 132
+    - 202
+    - 183
+    - 194
+    - 87
+    - 239
+    - 112
+    - 239
+  pan_id: 39119
+  ext_pan_id:
+    - 247
+    - 100
+    - 200
+    - 172
+    - 38
+    - 199
+    - 83
+    - 94
+  log_level: debug
+  channel: 25
+mqtt:
+  server: mqtt://10.10.10.146:1883
+  user: ha
+  password: !secret zigbee2mqtt_mqtt_password
+serial:
+  adapter: zstack
+  port: tcp://192.168.200.92:6638
+frontend:
+  enabled: true
+  port: 8099
+device_options: {}
+devices:
+  '0x54ef441000cfd3e7':
+    friendly_name: Kitchen Blind
+  '0x842712fffe76fb9f':
+    friendly_name: THS Office
+  '0x0cae5ffffecacd38':
+    friendly_name: THS BR1
+  '0xa4c1387a1889f2bd':
+    friendly_name: PLG Pauls Bedroom Light
+  '0x842712fffe38ae6f':
+    friendly_name: TRV BR2
+  '0x0ceff6fffe76b6f8':
+    friendly_name: TRV BR1
+  '0x842712fffe73dc49':
+    friendly_name: THS Bathroom
+  '0x842712fffe73d5d1':
+    friendly_name: THS Day Lounge
+  '0x842712fffe772be9':
+    friendly_name: THS BR2
+  '0x0ceff6fffee4d021':
+    friendly_name: TRV Lounge
+  '0xa4c138c198f6209c':
+    friendly_name: PLG Tracys Bedroom Light
+  '0x7cc6b6fffe0bbbbc':
+    friendly_name: TRV Bathroom
+  '0xa4c138ebe1d0604b':
+    friendly_name: PLG Loft Light
+  '0xa4c138b9eab61e23':
+    friendly_name: PLG Side Light 1
+  '0xa4c138e897cce2ef':
+    friendly_name: PLG AC70
+  '0x842712fffe37dab2':
+    friendly_name: THS Lounge
+  '0x7cc6b6fffe38d943':
+    friendly_name: Day Lounge Main Light
+  '0x44e2f8fffe1843b2':
+    friendly_name: Lounge Main Light
+  '0x7cc6b6fffe38d261':
+    friendly_name: Kitchen 1
+  '0x7cc6b6fffe38beba':
+    friendly_name: Kitchen 2
+  '0x6cfd22fffe5afa20':
+    friendly_name: Repeater Kitchen
+  '0xa4c1383be734883d':
+    friendly_name: PLG Lounge Corner Lamp
+  '0x00158d008b89a26d':
+    friendly_name: Coat Cupboard Door
+  '0x881a14fffeee2786':
+    friendly_name: Coat Cupboard
+  '0x0ceff6fffe3ab805':
+    friendly_name: Office Main Light
+    filtered_optimistic: []
+    optimistic: false
+  '0x842712fffe1853b4':
+    friendly_name: TRV Office
+  '0x70ac08fffe0dcdd7':
+    friendly_name: Bathroom Lights
+  '0x58263afffefaca4e':
+    friendly_name: Garden Light
+  '0x28dba7fffe03e556':
+    friendly_name: TRV Day Lounge
+  '0xa4c1385dba7036f4':
+    friendly_name: PLG QNAP
+  '0xa4c138105616f22b':
+    friendly_name: PLG Side Light 2
+version: 5
+groups:
+  '1':
+    friendly_name: '1'
+availability:
+  enabled: true

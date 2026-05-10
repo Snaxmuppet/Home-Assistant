@@ -1,0 +1,499 @@
+###############################################################################
+# Home Assistant – Heat on Demand System
+# Author: Paul Moxhay
+# License: MIT
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+###############################################################################
+
+###############################################################################
+# 1. Helper Entities
+###############################################################################
+
+input_boolean:
+  #############################################################################
+  # Global master switch
+  # This controls the HOD system overall. With this off all HOD functions are
+  # disabled
+  #############################################################################
+  hod_master:
+    name: HOD Master
+    icon: mdi:home-thermometer
+
+  #############################################################################
+  # Per-room masters
+  # Each room has a master.
+  # With the room master off all HOD functions for that room are disabled
+  #############################################################################
+  hod_master_office:
+    name: HOD Master Office
+    icon: mdi:desk
+
+  hod_master_lounge:
+    name: HOD Master Lounge
+    icon: mdi:sofa
+
+  hod_master_day_lounge:
+    name: HOD Master Day Lounge
+    icon: mdi:sofa
+
+  hod_master_bathroom:
+    name: HOD Master Bathroom
+    icon: mdi:shower
+
+  hod_master_bedroom1:
+    name: HOD Master Bedroom1
+    icon: mdi:bed
+
+  hod_master_bedroom2:
+    name: HOD Master Bedroom2
+    icon: mdi:bed
+
+  ###############################################################################
+  # Comma-separated list of room names
+  # Add a room here and global logic updates automatically
+  #############################################################################
+input_text:
+  hod_rooms:
+    name: HOD Rooms
+    initial: "office,lounge,bathroom,day_lounge,bedroom1,bedroom2"
+
+  #############################################################################
+  # Used for cool off
+  # stores last datetime a raw change occured
+  #############################################################################
+input_datetime:
+  # Timestamp of last boiler action (for cooldown)
+  hod_last_activity:
+    name: HOD Last Activity
+    has_date: true
+    has_time: true
+
+###############################################################################
+# 2. Sensors
+#
+# Here we create a series of binary-sensors that control the logic
+# of the system. You will need to change this section to have:
+#
+#   - A demand raw sensor per room - this is set on when the TRV requires heat
+#     The system currently uses a Better Thermostat for each TRV but you can
+#     use any sensor/TRV that allows you to determine if the room requires heat.
+#     Better Thermostat is a climate entity and sets its hvac_action attribute
+#     to "heating" when it senses that the room temperature is below the
+#     target temperature.
+#
+#          - add a ..._demand_raw sensor for each room
+#          - change the state: to suit your TRV
+#
+#              example:
+#                         - name: "HOD Office Heat Demand Raw"
+#                           unique_id: hod_office_heat_demand_raw
+#                           state: >
+#                             {{ state_attr('climate.btrv_office', 'hvac_action') == 'heating' }
+#
+#
+#  - A demand sensor for each room - this builds on the raw sensor and sets the
+#    demand sensor on if there is a raw demand and the room and system masters
+#    are on. So this then becomes the deterministinc sensor as to whether heat
+#    is required for the room.
+#
+#            - add a ..._demand sensor for each room
+#
+#                example:
+#                         - name: "HOD Office Heat Demand"
+#                           unique_id: hod_office_heat_demand
+#                           state: >
+#                             {{
+#                               is_state('input_boolean.hod_master', 'on')
+#                               and is_state('input_boolean.hod_master_office', 'on')
+#                               and is_state('binary_sensor.hod_office_heat_demand_raw', 'on')
+#                             }}
+#
+###############################################################################
+
+template:
+  #############################################################################
+  # RAW HEAT DEMAND PER ROOM (TRV hvac_action)
+  # Each room Demand Raw is set on when the BTRV
+  #            hvac_action changes to "heating"
+  #############################################################################
+  - binary_sensor:
+      - name: "HOD Office Heat Demand Raw"
+        unique_id: hod_office_heat_demand_raw
+        state: >
+          {{ state_attr('climate.btrv_office', 'hvac_action') == 'heating' }}
+
+      - name: "HOD Lounge Heat Demand Raw"
+        unique_id: hod_lounge_heat_demand_raw
+        state: >
+          {{ state_attr('climate.btrv_lounge', 'hvac_action') == 'heating' }}
+
+      - name: "HOD Day Lounge Heat Demand Raw"
+        unique_id: hod_day_lounge_heat_demand_raw
+        state: >
+          {{ state_attr('climate.btrv_day_lounge', 'hvac_action') == 'heating' }}
+
+      - name: "HOD Bathroom Heat Demand Raw"
+        unique_id: hod_bathroom_heat_demand_raw
+        state: >
+          {{ state_attr('climate.btrv_bathroom', 'hvac_action') == 'heating' }}
+
+      - name: "HOD bedroom1 Heat Demand Raw"
+        unique_id: hod_bedroom1_heat_demand_raw
+        state: >
+          {{ state_attr('climate.btrv_bedroom_1', 'hvac_action') == 'heating' }}
+
+      - name: "HOD bedroom2 Heat Demand Raw"
+        unique_id: hod_bedroom2_heat_demand_raw
+        state: >
+          {{ state_attr('climate.btrv_bedroom_2', 'hvac_action') == 'heating' }}
+
+      ###########################################################################
+      # EFFECTIVE HEAT DEMAND PER ROOM (room master + global master + raw)
+      # Each room Heat Demand is set on whenever
+      #     main master is on - HOD system is active
+      #     room master is on - HOD is active for that room
+      #     demand raw is on  - room is demanding heat
+      ###########################################################################
+
+      - name: "HOD Office Heat Demand"
+        unique_id: hod_office_heat_demand
+        state: >
+          {{
+            is_state('input_boolean.hod_master', 'on')
+            and is_state('input_boolean.hod_master_office', 'on')
+            and is_state('binary_sensor.hod_office_heat_demand_raw', 'on')
+          }}
+
+      - name: "HOD Lounge Heat Demand"
+        unique_id: hod_lounge_heat_demand
+        state: >
+          {{
+            is_state('input_boolean.hod_master', 'on')
+            and is_state('input_boolean.hod_master_lounge', 'on')
+            and is_state('binary_sensor.hod_lounge_heat_demand_raw', 'on')
+          }}
+
+      - name: "HOD Day Lounge Heat Demand"
+        unique_id: hod_day_lounge_heat_demand
+        state: >
+          {{
+            is_state('input_boolean.hod_master', 'on')
+            and is_state('input_boolean.hod_master_day_lounge', 'on')
+            and is_state('binary_sensor.hod_day_lounge_heat_demand_raw', 'on')
+          }}
+
+      - name: "HOD Bathroom Heat Demand"
+        unique_id: hod_bathroom_heat_demand
+        state: >
+          {{
+            is_state('input_boolean.hod_master', 'on')
+            and is_state('input_boolean.hod_master_bathroom', 'on')
+            and is_state('binary_sensor.hod_bathroom_heat_demand_raw', 'on')
+          }}
+
+      - name: "HOD bedroom1 Heat Demand"
+        unique_id: hod_bedroom1_heat_demand
+        state: >
+          {{
+            is_state('input_boolean.hod_master', 'on')
+            and is_state('input_boolean.hod_master_bedroom1', 'on')
+            and is_state('binary_sensor.hod_bedroom1_heat_demand_raw', 'on')
+          }}
+
+      - name: "HOD bedroom2 Heat Demand"
+        unique_id: hod_bedroom2_heat_demand
+        state: >
+          {{
+            is_state('input_boolean.hod_master', 'on')
+            and is_state('input_boolean.hod_master_bedroom2', 'on')
+            and is_state('binary_sensor.hod_bedroom2_heat_demand_raw', 'on')
+          }}
+
+      ###########################################################################
+      # ANY ROOM MASTER ON (dynamic using expand)
+      # The boiler will only be commanded on if there is at least one room
+      # that is HOD active
+      #
+      #        - add a input_boolean.hod_master... line for each room
+      #
+      #        - add a button control on the UI for each of the room masters
+      #          to enable/disable HOD functionality for each room
+      ###########################################################################
+
+      - name: "HOD Any Room Master On"
+        unique_id: hod_any_room_master_on
+        state: >
+          {{
+            is_state('input_boolean.hod_master_office', 'on')
+            or is_state('input_boolean.hod_master_lounge', 'on')
+            or is_state('input_boolean.hod_master_day_lounge', 'on')
+            or is_state('input_boolean.hod_master_bathroom', 'on')
+            or is_state('input_boolean.hod_master_bedroom1', 'on')
+            or is_state('input_boolean.hod_master_bedroom2', 'on')
+          }}
+
+      ###########################################################################
+      # GLOBAL HEAT DEMAND (dynamic OR of all raw demands)
+      # We pull it all together here...
+      #
+      # Global Heat Demand is set on to command the boiler when
+      #       Main master on
+      #       Any room master is on
+      #       Any rooms are demanding heat - Loop through rooms
+      #
+      # Global Heat Demand is the final step... if this is on/off then the automation
+      # will fire up or shut down the boiler.
+      #
+      # The automation only looks at Global Heat Demand to determine if the boiler
+      # should be on or off. The rest of the logic is in the binary_sensors.
+      ###########################################################################
+
+      - name: "HOD Global Heat Demand"
+        unique_id: hod_global_heat_demand
+        state: >
+          {{
+            is_state('input_boolean.hod_master', 'on')
+            and is_state('binary_sensor.hod_any_room_master_on', 'on')
+            and (
+              states.binary_sensor
+              | selectattr('entity_id', 'search', 'binary_sensor\.hod_.*_heat_demand_raw')
+              | selectattr('state', 'eq', 'on')
+              | list
+              | count > 0
+            )
+          }}
+###############################################################################
+# 3. Boiler Control Automation
+#
+# The one automation controls all the HOD functions.
+#
+# Most of the logic though is built into the binary_sensors above
+#
+#    - add a demand_raw binary sensor to the raw_change trigger
+#    - add a hod_master input_boolean to the master change trigger
+#
+#
+# Boiler Control
+#
+# Here we use a climate entity climate.home_thermostat
+#
+# To set the boiler on we set the climate.set_hvac_mode to "heat" to fire up
+# the boiler. We also set the system thermostat to 25C to make sure that the
+# system theremostat doesn't shut off the boiler if it gets up to temperature.
+# To shut the boiler down we set it to "off".
+#
+# You may need to change that section to control your own boiler.
+#
+# Cooldown Logic
+#
+# If there has been a change in the raw demand it means the thermostat has
+# triggered. In that case there is a cooldown built in. After any change in raw
+# demand (not changing masters). the system prevents any further action for the
+# cooldown period. To change the cooldown period change the following line...
+# the 1 indicates a 1 second delay. Change the 1 in that section to your
+# requirements.
+#
+# After the delay the automation will retrigger.
+#
+#              {{ (now() - last_dt).total_seconds() > 1 }}
+###############################################################################
+
+automation:
+  - id: hod_boiler_control_with_cooldown
+    alias: "HOD: Boiler control with cooldown"
+    mode: single
+
+    #############################################################################
+    # There are two modes:
+    #   raw_change:
+    #       Indicates a change in raw heat demand by a room.
+    #       This mode triggers the cooldown period.
+    #   Other modes:
+    #       Ensure the automation runs when masters toggle.
+    #############################################################################
+
+    trigger:
+      # Raw TRV heat demand changed
+      - id: raw_change
+        platform: state
+        entity_id:
+          - binary_sensor.hod_office_heat_demand_raw
+          - binary_sensor.hod_lounge_heat_demand_raw
+          - binary_sensor.hod_day_lounge_heat_demand_raw
+          - binary_sensor.hod_bathroom_heat_demand_raw
+          - binary_sensor.hod_bedroom1_heat_demand_raw
+          - binary_sensor.hod_bedroom2_heat_demand_raw
+
+      # Global demand changed
+      - id: global_change
+        platform: state
+        entity_id: binary_sensor.hod_global_heat_demand
+
+      # Master toggles (global + rooms)
+      - id: master_change
+        platform: state
+        entity_id:
+          - input_boolean.hod_master
+          - input_boolean.hod_master_office
+          - input_boolean.hod_master_lounge
+          - input_boolean.hod_master_day_lounge
+          - input_boolean.hod_master_bathroom
+          - input_boolean.hod_master_bedroom1
+          - input_boolean.hod_master_bedroom2
+
+      #############################################################################
+      # Periodic retrigger this automation every 10 seconds to
+      # ensure events are not missed after cooldown
+      #
+      # Change this to re-trigger more or less frequently to your requirements
+      #############################################################################
+      - id: periodic_check
+        platform: time_pattern
+        minutes: "/2"
+
+    condition:
+      #############################################################################
+      # Global HOD master must be ON for any actions
+      #############################################################################
+      - condition: state
+        entity_id: input_boolean.hod_master
+        state: "on"
+
+      #############################################################################
+      # Cooldown logic:
+      # Passes TRUE if:
+      #   - Trigger is NOT raw_change
+      #   - Last timestamp is unknown/unavailable/empty
+      #   - Now - last timestamp > 600 seconds (10 mins)
+      #
+      # Otherwise → automation stops
+      #############################################################################
+      - condition: template
+        value_template: >
+          {% set last = states('input_datetime.hod_last_activity') %}
+
+          {% if trigger.id != 'raw_change' %}
+            true
+          {% elif last in ['unknown', 'unavailable', '', None] %}
+            true
+          {% else %}
+            {% set last_dt = last | as_datetime | as_local %}
+            {% if last_dt is none %}
+              true
+            {% else %}
+              {{ (now() - last_dt).total_seconds() > 600 }}
+            {% endif %}
+          {% endif %}
+
+    action:
+      #############################################################################
+      # Delay to allow BTRV entities to update
+      #############################################################################
+      - delay: "00:00:01"
+
+      #############################################################################
+      # Boiler control logic
+      #############################################################################
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: binary_sensor.hod_global_heat_demand
+                state: "on"
+
+              - condition: not
+                conditions:
+                  - condition: state
+                    entity_id: climate.home_thermostat
+                    state: heat
+
+            sequence:
+              - service: climate.set_hvac_mode
+                target:
+                  entity_id: climate.home_thermostat
+                data:
+                  hvac_mode: heat
+
+              - service: climate.set_temperature
+                target:
+                  entity_id: climate.home_thermostat
+                data:
+                  temperature: 25
+
+              #              - service: notify.email_me
+              #                metadata: {}
+              #                data:
+              #                  message: Boiler is on
+              #                  title: Boiler is on
+              #                 target: paul@moxhay.me
+
+              - action: telegram_bot.send_message
+                metadata: {}
+                data:
+                  title: Boiler is on
+                  message: Boiler has turned on
+
+          - conditions:
+              - condition: state
+                entity_id: binary_sensor.hod_global_heat_demand
+                state: "off"
+
+              - condition: not
+                conditions:
+                  - condition: state
+                    entity_id: climate.home_thermostat
+                    state: "off"
+
+            sequence:
+              - service: climate.set_hvac_mode
+                target:
+                  entity_id: climate.home_thermostat
+                data:
+                  hvac_mode: "off"
+
+              - service: climate.set_temperature
+                target:
+                  entity_id: climate.home_thermostat
+                data:
+                  temperature: 7
+
+              #              - service: notify.email_me
+              #                metadata: {}
+              #                data:
+              #                  message: Boiler is off
+              #                  title: Boiler is off
+              #                  target: paul@moxhay.me
+
+              - action: telegram_bot.send_message
+                metadata: {}
+                data:
+                  title: Boiler is off
+                  message: Boiler has turned off
+
+      #############################################################################
+      # Update cooldown timestamp ONLY when raw demand changed
+      #############################################################################
+      - choose:
+          - conditions: "{{ trigger.id == 'raw_change' }}"
+            sequence:
+              - service: input_datetime.set_datetime
+                target:
+                  entity_id: input_datetime.hod_last_activity
+                data:
+                  datetime: "{{ now().isoformat() }}"

@@ -1,0 +1,31 @@
+Lounge Lights:
+  name: "Lounge Lights"
+  entities:
+    - switch.plg_lounge_corner_lamp
+    - switch.lounge_main_light
+    - light.tv_backlight
+
+Office Lights:
+  name: All Office Lights
+  entities:
+    - switch.office_magnifier
+    - switch.office_main_light
+
+Kitchen Lights:
+  name: All Kitchen Lights
+  entities:
+    - switch.kitchen_1
+    - switch.kitchen_2
+
+Christmas Lights:
+  name: All Christmas Lights
+  entities:
+    - switch.christmas_tree
+    - switch.christmas_star
+    - switch.christmas_snowman
+
+Day Lounge Side Lights:
+  name: Side Lights
+  entities:
+    - switch.plg_side_light_1
+    - switch.plg_side_light_2

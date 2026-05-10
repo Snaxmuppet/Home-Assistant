@@ -1,0 +1,48 @@
+alexa_tv_lights_on:
+  alias: Alexa TV lights on
+  sequence:
+  - action: media_player.play_media
+    metadata: {}
+    data:
+      media_content_id: Alexa, TV Lights On
+      media_content_type: custom
+    target:
+      device_id: 4eae1542430ca5978e175081cdb4a4d0
+  description: ''
+  icon: mdi:television
+alexa_tv_lights_off:
+  alias: Alexa TV lights off
+  sequence:
+  - action: media_player.play_media
+    metadata: {}
+    data:
+      media_content_id: Alexa, TV Lights Off
+      media_content_type: custom
+    target:
+      device_id: 4eae1542430ca5978e175081cdb4a4d0
+  description: ''
+  icon: mdi:television
+alexa_office_lights_on:
+  alias: 'Alexa Office lights on '
+  sequence:
+  - action: media_player.play_media
+    metadata: {}
+    data:
+      media_content_id: Alexa, Office Lights On
+      media_content_type: custom
+    target:
+      device_id: 4eae1542430ca5978e175081cdb4a4d0
+  description: ''
+  icon: mdi:television
+alexa_office_lights_off:
+  alias: Alexa Office lights off
+  sequence:
+  - action: media_player.play_media
+    metadata: {}
+    data:
+      media_content_id: Alexa, Office Lights off
+      media_content_type: custom
+    target:
+      device_id: 4eae1542430ca5978e175081cdb4a4d0
+  description: ''
+  icon: mdi:television

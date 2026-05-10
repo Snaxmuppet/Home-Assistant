@@ -1,0 +1,895 @@
+- id: '1730317407231'
+  alias: Kitchen Blind Position
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - input_number.kitchen_blind_position
+  condition: []
+  action:
+  - data:
+      position: '{{ states(''input_number.kitchen_blind_position'') }}'
+    target:
+      device_id: 842601a10d1fad8e16a24ad6eb65cef9
+    action: cover.set_cover_position
+  mode: single
+- id: '1731285405111'
+  alias: Check Batteries
+  description: ''
+  triggers:
+  - at: 08:00:00
+    trigger: time
+  conditions:
+  - condition: template
+    value_template: '{{ sensors != '''' and (day | int == 0 or day | int == now().isoweekday())
+      }}'
+  actions:
+  - choose: []
+    default:
+    - action: input_boolean.turn_on
+      metadata: {}
+      data: {}
+      target:
+        entity_id: input_boolean.low_batteries
+    - action: persistent_notification.create
+      metadata: {}
+      data:
+        message: Low battery warning for {{sensors}}
+    - action: input_text.set_value
+      target:
+        entity_id: input_text.low_battery_sensor_list
+      data:
+        value: Low battery warning for {{sensors}}
+  variables:
+    day: 0
+    threshold: 40
+    exclude:
+      entity_id: []
+    sensors: "{% set result = namespace(sensors=[]) %} {% for state in states.sensor
+      | selectattr('attributes.device_class', '==', 'battery') %}\n  {% if 0 <= state.state
+      | int(-1) < threshold | int and not state.entity_id in exclude.entity_id %}\n
+      \   {% set result.sensors = result.sensors + [state.name ~ ' (' ~ state.state
+      ~ ' %)'] %}\n  {% endif %}\n{% endfor %} {% for state in states.binary_sensor
+      | selectattr('attributes.device_class', '==', 'battery') | selectattr('state',
+      '==', 'on') %}\n  {% if not state.entity_id in exclude.entity_id %}\n    {%
+      set result.sensors = result.sensors + [state.name] %}\n  {% endif %}\n{% endfor
+      %} {{result.sensors|join(', ')}}"
+  mode: single
+- id: '1732306172004'
+  alias: Bathroom Lights Turned On
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - light.bathroom_lights
+    to: 'on'
+    id: 'On'
+  - trigger: state
+    entity_id:
+    - light.bathroom_lights
+    to: 'off'
+    id: 'Off'
+  conditions:
+  - condition: or
+    conditions:
+    - condition: sun
+      before: sunrise
+    - condition: time
+      after: '22:30:00'
+    enabled: true
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - 'Off'
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.bathroom_lights
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - 'On'
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.bathroom_lights
+        data:
+          brightness_pct: 11
+      - delay: 00:00:01
+      - action: light.turn_on
+        target:
+          entity_id: light.bathroom_lights
+        data:
+          brightness_pct: 1
+  mode: single
+- id: '1732357151376'
+  alias: Toggle Office Ceiling Light every hour if on
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    hours: '*'
+    minutes: '58'
+    seconds: '0'
+  conditions:
+  - condition: state
+    entity_id: switch.office_main_light
+    state: 'on'
+  actions:
+  - repeat:
+      count: 2
+      sequence:
+      - action: switch.toggle
+        target:
+          entity_id: switch.office_main_light
+        data: {}
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 2
+          milliseconds: 0
+  mode: single
+- id: '1732377409715'
+  alias: Christmas Lights On Off 1
+  description: ''
+  triggers:
+  - trigger: sun
+    event: sunrise
+    offset: -01:00:00
+    id: 'on'
+  - trigger: time
+    at: '23:00:00'
+    id: 'off'
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - 'on'
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.christmas_lights
+    - conditions:
+      - condition: trigger
+        id:
+        - 'off'
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.christmas_lights
+  mode: single
+- id: '1733233357490'
+  alias: Office Lights on if occupied
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.office_presence_occupancy
+    from: 'off'
+    to: 'on'
+  conditions:
+  - condition: numeric_state
+    entity_id: sensor.office_presence_illuminance
+    below: 3
+  - condition: state
+    entity_id: input_boolean.office_ceiling_timer_override
+    state: 'off'
+  actions:
+  - action: homeassistant.turn_on
+    data: {}
+    target:
+      entity_id: group.all_office_lights
+  mode: single
+- id: '1733234299578'
+  alias: Office Lights off if unoccupied
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.office_presence_occupancy
+    from: 'on'
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 30
+  conditions:
+  - condition: state
+    entity_id: input_boolean.office_ceiling_timer_override
+    state: 'off'
+  actions:
+  - action: homeassistant.turn_off
+    data: {}
+    target:
+      entity_id: group.all_office_lights
+  mode: single
+- id: '1733237710431'
+  alias: Lounge TV Lights on when occupied
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.lounge_presence_occupancy
+    from: 'off'
+    to: 'on'
+  conditions:
+  - condition: numeric_state
+    entity_id: sensor.lounge_presence_illuminance
+    below: 30
+  actions:
+  - action: homeassistant.turn_on
+    data: {}
+    target:
+      entity_id:
+      - light.tv_backlight
+      - switch.plg_lounge_corner_lamp
+  mode: single
+- id: '1733237820519'
+  alias: Lounge lights off when unoccupied
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.lounge_presence_occupancy
+    from:
+    - 'on'
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 15
+      seconds: 0
+  conditions: []
+  actions:
+  - action: homeassistant.turn_off
+    target:
+      entity_id:
+      - light.tv_backlight
+      - switch.plg_lounge_corner_lamp
+      - switch.lounge_main_light
+    data: {}
+  mode: single
+- id: '1738364036601'
+  alias: Octopus Heating On
+  description: ''
+  triggers:
+  - at: input_datetime.octopus_on_time
+    trigger: time
+  conditions: []
+  actions:
+  - target:
+      entity_id: climate.my_spa_heater
+    data:
+      temperature: '{{states(''input_number.octopus_on_temp'')}}'
+    action: climate.set_temperature
+  mode: single
+- id: '1738364449264'
+  alias: Day Boost On
+  description: ''
+  triggers:
+  - at: input_datetime.day_on_time
+    trigger: time
+  conditions: []
+  actions:
+  - target:
+      entity_id: climate.my_spa_heater
+    data:
+      temperature: '{{states(''input_number.day_on_temp'')}}'
+    action: climate.set_temperature
+  mode: single
+- id: '1738365373969'
+  alias: Day Boost Off
+  description: ''
+  triggers:
+  - at: input_datetime.day_off_time
+    trigger: time
+  conditions: []
+  actions:
+  - target:
+      entity_id: climate.my_spa_heater
+    data:
+      temperature: '{{states(''input_number.day_off_temp'')}}'
+    action: climate.set_temperature
+  mode: single
+- id: '1738366265901'
+  alias: Octopus Heating Off
+  description: ''
+  triggers:
+  - at: input_datetime.octopus_off_time
+    trigger: time
+  conditions: []
+  actions:
+  - target:
+      entity_id: climate.my_spa_heater
+    data:
+      temperature: '{{states(''input_number.octopus_off_temp'')}}'
+    action: climate.set_temperature
+  mode: single
+- id: '1742383604922'
+  alias: AC70 Start Charge at 20%
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.bluetti_ac70_total_battery_percent
+    below: 20
+  conditions: []
+  actions:
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.plg_ac70
+  mode: single
+- id: '1742383731254'
+  alias: AC70 Stop Charge at 90%
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.bluetti_ac70_total_battery_percent
+    above: 90
+  conditions: []
+  actions:
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.plg_ac70
+  mode: single
+- id: '1743539619446'
+  alias: AC70 Start Charge at 23.30hrs
+  description: ''
+  triggers:
+  - trigger: time
+    at: 00:01:00
+  conditions: []
+  actions:
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.plg_ac70
+  mode: single
+- id: '1745007031048'
+  alias: AC70 Stop Charge at 5.30
+  description: ''
+  triggers:
+  - trigger: time
+    at: 05:30:00
+  conditions: []
+  actions:
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.plg_ac70
+  mode: single
+- id: '1756584805093'
+  alias: Night Light On
+  description: ''
+  triggers:
+  - trigger: sun
+    event: sunset
+    offset: 0
+  conditions: []
+  actions:
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.plg_night_light
+  mode: single
+- id: '1756584876351'
+  alias: Night Light Off
+  description: ''
+  triggers:
+  - trigger: sun
+    event: sunrise
+    offset: 0
+  conditions: []
+  actions:
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.plg_night_light
+  mode: single
+- id: '1757861461285'
+  alias: Coat Cupboard Door
+  description: ''
+  triggers:
+  - type: opened
+    device_id: 62f59e58732882d0d49ac66dea3b923e
+    entity_id: fe3b4963733282fbd22376238d36a89d
+    domain: binary_sensor
+    trigger: device
+    id: open
+  - type: not_opened
+    device_id: 62f59e58732882d0d49ac66dea3b923e
+    entity_id: fe3b4963733282fbd22376238d36a89d
+    domain: binary_sensor
+    trigger: device
+    id: closed
+  conditions: []
+  actions:
+  - if:
+    - condition: trigger
+      id:
+      - open
+    then:
+    - type: turn_on
+      device_id: 6e15d56d6ccd819a94c56468f18e41fd
+      entity_id: 3416679a5eb6b76f3d2367bc62908fad
+      domain: switch
+    else:
+    - delay: 00:00:30
+    - type: turn_off
+      device_id: 6e15d56d6ccd819a94c56468f18e41fd
+      entity_id: 3416679a5eb6b76f3d2367bc62908fad
+      domain: switch
+  mode: single
+- id: '1763450416526'
+  alias: Christmas Lights Helper Action
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id: input_boolean.christmas_lights
+    to: 'on'
+    id: 'on'
+  - trigger: state
+    entity_id: input_boolean.christmas_lights
+    to: 'off'
+    id: 'off'
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: 'on'
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: switch.christmas_tree
+          state: 'off'
+        - condition: state
+          entity_id: switch.christmas_star
+          state: 'off'
+        - condition: state
+          entity_id: switch.christmas_snowman
+          state: 'off'
+      sequence:
+      - target:
+          entity_id:
+          - switch.christmas_tree
+          - switch.christmas_star
+          - switch.christmas_snowman
+        action: switch.turn_on
+        data: {}
+      - action: input_boolean.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.christmas_lights
+    - conditions:
+      - condition: trigger
+        id: 'off'
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: switch.christmas_tree
+          state: 'on'
+        - condition: state
+          entity_id: switch.christmas_star
+          state: 'on'
+        - condition: state
+          entity_id: switch.christmas_snowman
+          state: 'on'
+      sequence:
+      - target:
+          entity_id:
+          - switch.christmas_tree
+          - switch.christmas_star
+          - switch.christmas_snowman
+        action: switch.turn_off
+      - action: input_boolean.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.christmas_lights
+  mode: single
+- id: '1763971720960'
+  alias: test 1
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - switch.office_main_light
+    to:
+    - 'on'
+  conditions: []
+  actions:
+  - action: notify.email_me
+    metadata: {}
+    data:
+      message: Office light on
+      title: Office light changed
+      target: paul@moxhay.me
+  mode: single
+- id: '1763972983736'
+  alias: 'Car starts/stops charging '
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.myenergi_york_road_zappi_power_charging
+    to:
+    - '0'
+    id: not_charging
+  - trigger: state
+    entity_id:
+    - sensor.myenergi_york_road_zappi_power_charging
+    from:
+    - '0'
+    id: charging
+  conditions:
+  - condition: time
+    after: 05:30:00
+    before: '23:30:00'
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - charging
+      sequence:
+      - action: notify.email_me
+        metadata: {}
+        data:
+          message: Car is now charging
+          target: paul@moxhay.me
+          title: Car is now charging
+      - action: number.set_value
+        metadata: {}
+        target:
+          entity_id: number.stream_1_backup_reserve_level
+        data:
+          value: '{{ states(''input_number.ecoflow_peak_upper_charge_limit'') | int(0)
+            }}'
+    - conditions:
+      - condition: trigger
+        id:
+        - not_charging
+      sequence:
+      - action: notify.email_me
+        metadata: {}
+        data:
+          message: Car has stopped charging
+          title: Car has stopped charging
+          target: paul@moxhay.me
+      - action: number.set_value
+        metadata: {}
+        data:
+          value: '10'
+        target:
+          entity_id: number.stream_1_backup_reserve_level
+  mode: single
+- id: '1764013327312'
+  alias: Garden Light Left On
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - switch.garden_light
+    to:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 15
+      seconds: 0
+  conditions:
+  - condition: state
+    entity_id: input_boolean.garden_light_timer_override
+    state:
+    - 'off'
+  actions:
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.garden_light
+  mode: single
+- id: '1764094461515'
+  alias: Cycle Christmas Tree
+  description: ''
+  triggers:
+  - trigger: time
+    at: '14:00:00'
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    - sat
+    - sun
+  conditions: []
+  actions:
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.christmas_tree
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 10
+      milliseconds: 0
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.christmas_tree
+  mode: single
+- id: '1767075741419'
+  alias: EcoFlow Charging Management - old
+  description: Manages EcoFlow charging based on time, buttons, and SoC limits.
+  triggers:
+  - trigger: time
+    at: 00:00:00
+    id: charge
+  - trigger: time
+    at: 05:30:00
+    id: nocharge
+  - trigger: state
+    entity_id: input_button.ecoflow_charge
+    id: charge
+  - trigger: state
+    entity_id:
+    - input_button.ecoflow_nocharge
+    id: nocharge
+  - trigger: numeric_state
+    entity_id: sensor.stream_system_soc_3
+    below: input_number.ecoflow_overnight_lower_charge_limit
+    id: charge_soc
+  - trigger: numeric_state
+    entity_id: sensor.stream_system_soc_3
+    above: input_number.ecoflow_overnight_upper_charge_limit
+    id: nocharge_soc
+  actions:
+  - choose:
+    - conditions:
+      - or:
+        - condition: trigger
+          id: charge
+        - and:
+          - condition: trigger
+            id: charge_soc
+          - condition: time
+            after: '23:30:00'
+            before: 05:30:00
+      sequence:
+      - action: number.set_value
+        target:
+          entity_id: number.stream_1_backup_reserve_level
+        data:
+          value: '{{ states(''input_number.ecoflow_overnight_upper_charge_limit'')
+            | float(0) }}'
+    - conditions:
+      - or:
+        - condition: trigger
+          id: nocharge
+        - and:
+          - condition: trigger
+            id: nocharge_soc
+          - condition: time
+            after: '23:30:00'
+            before: 05:30:00
+      sequence:
+      - action: number.set_value
+        target:
+          entity_id: number.stream_1_backup_reserve_level
+        data:
+          value: '{{ states(''input_number.ecoflow_overnight_lower_charge_limit'')
+            | float(0) }}'
+- id: '1767112267703'
+  alias: EcoFlow Charging Management
+  description: Manages EcoFlow charging based on time, buttons, and SoC limits.
+  triggers:
+  - trigger: time
+    at: '23:31:00'
+    id: offpeak
+  - trigger: time
+    at: 05:30:00
+    id: peak
+  - trigger: state
+    entity_id: input_button.ecoflow_charge
+    id: charge
+  - trigger: state
+    entity_id: input_button.ecoflow_nocharge
+    id: nocharge
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: offpeak
+      sequence:
+      - action: text.set_value
+        target:
+          entity_id: input_text.ecoflow_peak_offpeak
+        data:
+          value: offpeak
+      - action: number.set_value
+        target:
+          entity_id: number.stream_1_backup_reserve_level
+        data:
+          value: '{{ states(''sensor.tomorrow_soc_target'') | int(0) }}'
+    - conditions:
+      - condition: trigger
+        id: peak
+      sequence:
+      - action: text.set_value
+        target:
+          entity_id: input_text.ecoflow_peak_offpeak
+        data:
+          value: peak
+      - action: number.set_value
+        target:
+          entity_id: number.stream_1_backup_reserve_level
+        data:
+          value: 10
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: charge
+      sequence:
+      - action: number.set_value
+        target:
+          entity_id: number.stream_1_backup_reserve_level
+        data:
+          value: 95
+    - conditions:
+      - condition: trigger
+        id: nocharge
+      sequence:
+      - action: number.set_value
+        target:
+          entity_id: number.stream_1_backup_reserve_level
+        data:
+          value: 10
+- id: '1768156880059'
+  alias: test telegram
+  description: ''
+  triggers:
+  - trigger: time
+    at: '18:43:00'
+  conditions: []
+  actions:
+  - action: telegram_bot.send_message
+    metadata: {}
+    data:
+      title: test
+      message: test message at 1841
+  mode: single
+- id: '1768158573862'
+  alias: 'HOD: Master Daily On/Off'
+  description: When off we must manually turn off the boiler. Turning on automatically
+    runs hod control
+  triggers:
+  - trigger: time
+    at: '18:00:00'
+    id: master_off
+  - trigger: time
+    at: 06:00:00
+    id: master_on
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - master_on
+      sequence:
+      - action: input_boolean.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.hod_master
+    - conditions:
+      - condition: trigger
+        id:
+        - master_off
+      sequence:
+      - action: input_boolean.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.hod_master
+      - action: climate.set_hvac_mode
+        metadata: {}
+        target:
+          entity_id: climate.home_thermostat
+        data:
+          hvac_mode: 'off'
+  mode: single
+- id: '1771248167050'
+  alias: Solcast update
+  description: ''
+  triggers:
+  - trigger: time
+    at:
+    - '23:01:00'
+  conditions: []
+  actions:
+  - action: solcast_solar.force_update_forecasts
+    data: {}
+  mode: single
+- id: '1776855711933'
+  alias: Spa at Temp
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - water_heater.my_spa_heater
+    attribute: current_temperature
+    above: input_number.spa_target_temp
+  conditions: []
+  actions:
+  - action: notify.email_me
+    metadata: {}
+    data:
+      message: Spa at temperature
+  mode: single
+- id: '1776899467500'
+  alias: Spa Heating
+  description: ''
+  triggers:
+  - trigger: time
+    at: 05:30:00
+    id: no-heat
+  - trigger: time
+    at: 01:30:00
+    id: heat
+  - trigger: numeric_state
+    entity_id:
+    - sensor.myenergi_york_road_zappi_power_charging
+    above: 100
+    id: heat
+  - trigger: numeric_state
+    entity_id:
+    - sensor.myenergi_york_road_zappi_power_charging
+    below: 100
+    id: no-heat
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - heat
+      sequence:
+      - action: climate.set_temperature
+        metadata: {}
+        target:
+          entity_id: climate.my_spa_heater
+        data:
+          temperature: '{{ states(''input_number.spa_target_temp'') }}'
+    - conditions:
+      - condition: trigger
+        id:
+        - no-heat
+      sequence:
+      - action: climate.set_temperature
+        metadata: {}
+        target:
+          device_id: d076fea3efc515e799bb86bce4f99b96
+        data:
+          temperature: 15
+  mode: single

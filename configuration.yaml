@@ -1,0 +1,314 @@
+# ============================================================
+# Home Assistant — Main Configuration File
+# ============================================================
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# ------------------------------------------------------------
+# Frontend
+# Loads custom themes from the /themes folder and registers
+# extra JavaScript modules for UI enhancements (card-mod).
+# ------------------------------------------------------------
+frontend:
+  javascript_version: latest
+  themes: !include_dir_merge_named themes
+  extra_module_url:
+    - /local/community/lovelace-card-mod/card-mod.js
+
+# ------------------------------------------------------------
+# Included Configuration Files
+# Splits automations, scripts, scenes and groups into
+# separate files for easier management.
+# ------------------------------------------------------------
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+group: !include groups.yaml
+
+# ------------------------------------------------------------
+# Home Assistant Core Settings
+# Package files allow splitting configuration into
+# topic-based sub-folders under /packages.
+# ------------------------------------------------------------
+homeassistant:
+  packages: !include_dir_named packages
+
+# ------------------------------------------------------------
+# HTTP
+# Enables reverse-proxy support. The trusted_proxies address
+# must match the upstream proxy server (e.g. nginx / Traefik).
+# ------------------------------------------------------------
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 10.10.10.20
+
+# ------------------------------------------------------------
+# MQTT Sensors
+# Sensors whose state is published to MQTT topics, primarily
+# used for Octopus Agile pricing and hot-tub (spa) control.
+# ------------------------------------------------------------
+mqtt:
+  sensor:
+    # Current Octopus Agile electricity unit price (pence per kWh)
+    - name: "Current Agile Price"
+      unique_id: Current_Agile_Price
+      state_topic: "agile/currentPeriodPrice"
+      value_template: "{{ value }}"
+      unit_of_measurement: "p/kWh"
+
+    # Spa operating mode as commanded by the Renewable Heat controller
+    - name: "Spa RH Mode"
+      unique_id: "Spa_RH_Mode"
+      state_topic: "spa/modeRH"
+      value_template: "{{ value }}"
+
+    # Spa operating mode as commanded by Home Assistant
+    - name: "Spa HA Mode"
+      unique_id: "Spa_HA_Mode"
+      state_topic: "spa/modeHA"
+      value_template: "{{ value }}"
+
+    # Maximum electricity price (p/kWh) at which the spa is permitted to run
+    - name: "Spa Max Price"
+      unique_id: "Spa_Max_Price"
+      state_topic: "spa/maxprice"
+      value_template: "{{ value }}"
+      unit_of_measurement: "p/kWh"
+
+    # Manual override flag for spa automation (e.g. "on" / "off")
+    - name: "Spa Override"
+      unique_id: "Spa_Override"
+      state_topic: "spa/override"
+      value_template: "{{ value }}"
+
+    # Start timestamp of the current Octopus Agile half-hour pricing period
+    - name: "Current Period Start"
+      unique_id: "Current_Period_Start"
+      state_topic: "agile/currrentPeriodStart"
+      value_template: "{{ value }}"
+
+# ------------------------------------------------------------
+# Template Sensors
+# Derived sensors calculated from other entity states.
+# All sensors are defined in a single block as per best practice.
+# ------------------------------------------------------------
+template:
+  - sensor:
+      # Spa target (set-point) temperature pulled from the spa climate entity
+      - name: "Spa Setpoint"
+        unique_id: spa_setpoint
+        unit_of_measurement: "°C"
+        state: "{{ states.climate.my_spa_heater.attributes.temperature }}"
+
+  - sensor:
+      # Spa - Correct Bob pH overrread
+      - name: "Spa pH Corrected"
+        unique_id: spa_ph_corrected
+        state_class: measurement
+        device_class: ph
+        state: "{{ states('sensor.my_spa_ph') | float(0) - 0.3 }}"
+
+      # Current spa water temperature pulled from the spa climate entity
+      - name: "Spa Temperature"
+        unique_id: spa_temperature
+        unit_of_measurement: "°C"
+        state: "{{ states.climate.my_spa_heater.attributes.current_temperature }}"
+
+      # Outside air temperature sourced from the HA weather integration
+      - name: "Outside Temperature"
+        unique_id: outside_temperature
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state: "{{ state_attr('weather.forecast_home', 'temperature') }}"
+
+      # Spa current temperature with state_class, device_class and availability guard
+      - name: "Spa Current Temperature"
+        unique_id: "template_sensor_spa_current_temperature"
+        state_class: measurement
+        device_class: temperature
+        unit_of_measurement: "°C"
+        state: "{{ state_attr('climate.my_spa_heater', 'current_temperature') | round(1) | float(1) }}"
+        availability: "{{ state_attr('climate.my_spa_heater', 'current_temperature') | is_number }}"
+
+      # Kia e-Niro estimated remaining range converted from km to miles
+      - name: "Car Range"
+        unique_id: "template_sensor_car_range"
+        state_class: measurement
+        unit_of_measurement: "Mi"
+        state: "{{ (float(states('sensor.e_niro_ev_range')) * 0.621371) | round(0) }}"
+        availability: "{{ states('sensor.e_niro_ev_range') | is_number }}"
+
+      # Kia e-Niro total odometer reading converted from km to miles
+      - name: "Car Total ODO"
+        unique_id: "template_sensor_car_total_odo"
+        state_class: measurement
+        unit_of_measurement: "Mi"
+        state: "{{ (float(states('sensor.e_niro_odometer')) * 0.621371) | round(0) }}"
+        availability: "{{ states('sensor.e_niro_odometer') | is_number }}"
+
+      # EcoFlow Stream 1 remaining runtime formatted as hours and minutes
+      - name: "Stream 1 Runtime"
+        unique_id: stream1_runtime_hours_minutes
+        icon: mdi:clock-outline
+        state: >
+          {% set mins = states('sensor.stream_1_remaining_time') | int %}
+          {{ (mins // 60) }}h {{ (mins % 60) }}m
+
+      # EcoFlow Stream 2 remaining runtime formatted as hours and minutes
+      - name: "Stream 2 Runtime"
+        unique_id: stream2_runtime_hours_minutes
+        icon: mdi:clock-outline
+        state: >
+          {% set mins = states('sensor.stream_2_remaining_time') | int %}
+          {{ (mins // 60) }}h {{ (mins % 60) }}m
+
+      # EcoFlow Stream 1 net charging power (AC input minus AC output)
+      - name: "Stream 1 Charging"
+        unique_id: stream1_charging
+        state_class: measurement
+        unit_of_measurement: "W"
+        state: "{{ float(states('sensor.stream_1_in_power')) - float(states('sensor.stream_1_out_power')) | float }}"
+
+      # EcoFlow Stream 2 net charging power (AC input minus AC output)
+      - name: "Stream 2 Charging"
+        unique_id: stream2_charging
+        state_class: measurement
+        unit_of_measurement: "W"
+        state: "{{ float(states('sensor.stream_2_in_power')) - float(states('sensor.stream_2_out_power')) | float }}"
+
+      # EcoFlow Stream AC Pro 1 net charging power (AC input minus AC output)
+      - name: "Stream AC Pro 1 Charging"
+        unique_id: streamACPro_1_charging
+        state_class: measurement
+        unit_of_measurement: "W"
+        state: "{{ float(states('sensor.stream_ac_pro_in_power')) - float(states('sensor.stream_ac_pro_out_power')) | float }}"
+
+      # EcoFlow Stream AC Pro 2 net charging power (AC input minus AC output)
+      - name: "Stream AC Pro 2 Charging"
+        unique_id: streamACPro_2_charging
+        state_class: measurement
+        unit_of_measurement: "W"
+        state: "{{ float(states('sensor.stream_ac_pro_0440_in_power')) - float(states('sensor.stream_ac_pro_0440_out_power')) | float }}"
+
+      # Total solar PV generation across all four inputs on EcoFlow Stream 1
+      - name: "EcoFlow PV Total (Manual)"
+        unique_id: ecoflow_pv_total_manual
+        unit_of_measurement: "W"
+        state: >
+          {% set pv1 = states('sensor.stream_1_power_pv_1') | float(0) | round(0) %}
+          {% set pv2 = states('sensor.stream_1_power_pv_2') | float(0) | round(0) %}
+          {% set pv3 = states('sensor.stream_1_power_pv_3') | float(0) | round(0) %}
+          {% set pv4 = states('sensor.stream_1_power_pv_4') | float(0) | round(0) %}
+          {{ pv1 + pv2 + pv3 + pv4 }}
+
+      # Recommended battery State of Charge (SoC) target for tomorrow.
+      # Calculated from the Solcast half-hourly PV forecast, estimated daily
+      # load, morning energy requirements, and a 10 % headroom buffer.
+      - name: "Tomorrow SoC Target"
+        unit_of_measurement: "%"
+        state: >
+          {% set pv_total = states('sensor.solcast_pv_forecast_forecast_tomorrow') | float(0) %}
+          {% set forecast = state_attr('sensor.solcast_pv_forecast_forecast_tomorrow', 'detailedforecast') %}
+          {% if forecast is none %}
+            {% set forecast = [] %}
+          {% endif %}
+
+          {% set load = 5.8 %}
+          {% set cap = 7.6 %}
+          {% set eff = 0.86 %}
+
+          {% set headroom = 0.15 %}
+
+          {# Base minimum SoC and reserve margin #}
+          {% set soc_base = 0.32 %}
+          {% set soc_reserve = 0.05 %}
+
+          {# Morning load requirement (06:00–12:00) #}
+          {% set E_morning_load = 1.8 %}
+
+          {# Sum morning PV from Solcast half-hourly forecast #}
+          {% set E_morning_pv = 0 %}
+          {% for entry in forecast %}
+            {% set t = as_datetime(entry.period_start) %}
+            {% if t.hour >= 6 and t.hour < 12 %}
+              {% set E_morning_pv = E_morning_pv + (entry.pv_estimate | float(0)) %}
+            {% endif %}
+          {% endfor %}
+
+          {# Morning deficit — how much energy the battery must cover #}
+          {% set E_morning_req = [0, E_morning_load - E_morning_pv] | max %}
+
+          {# Convert morning deficit to a minimum SoC floor #}
+          {% set soc_morning_floor = E_morning_req / (cap * eff) %}
+
+          {# Dynamic minimum SoC — whichever is higher: base or morning floor + reserve #}
+          {% set soc_min_dynamic = [soc_base, soc_morning_floor + soc_reserve] | max %}
+
+          {# Whole-day energy shortfall the battery must cover #}
+          {% set e_req = [0, load - pv_total] | max %}
+
+          {# Raw SoC target including headroom #}
+          {% set soc = soc_min_dynamic + (e_req / (cap * eff)) + headroom %}
+
+          {# Clamp between dynamic minimum and 95 % #}
+          {% set soc_clamped = [0.95, [soc, soc_min_dynamic] | max] | min %}
+
+          {# Output as integer percentage #}
+          {{ (soc_clamped * 100) | round(0) | int }}
+
+# ------------------------------------------------------------
+# Legacy Platform Sensors
+# Using the older sensor: platform format. These cannot yet
+# be migrated to the modern integration-based configuration.
+# ------------------------------------------------------------
+sensor:
+  # EmonCMS energy monitoring — pulls feed data from the local EmonCMS instance
+  - platform: emoncms
+    api_key: !secret emoncms_api_key
+    url: http://192.168.1.114/
+    id: 1
+
+  # Time & Date sensors providing various formatted time/date strings
+  - platform: time_date
+    display_options:
+      - "time"
+      - "date"
+      - "date_time"
+      - "date_time_utc"
+      - "date_time_iso"
+      - "time_date"
+      - "time_utc"
+
+# ------------------------------------------------------------
+# Custom Templates
+# Placeholder for custom Jinja2 template functions / filters.
+# ------------------------------------------------------------
+custom_templates:
+
+# ------------------------------------------------------------
+# Pyscript
+# Exposes EcoFlow API credentials to pyscript scripts via
+# pyscript.config so they are not hardcoded in Python files.
+# ------------------------------------------------------------
+pyscript:
+  ecoflow_access_key: !secret ecoflow_access_key
+  ecoflow_secret_key: !secret ecoflow_secret_key
+
+# ------------------------------------------------------------
+# Notifications
+# SMTP email notification service via Fastmail, used to send
+# alerts and status updates to the home owner.
+# ------------------------------------------------------------
+notify:
+  - name: email_me
+    platform: smtp
+    sender: "ha@moxhay.me"
+    recipient: "paul@moxhay.me"
+    server: "smtp.fastmail.com"
+    port: 587
+    username: "paulmoxhay@fastmail.com"
+    password: !secret smtp_password_fastmail
+    encryption: starttls
+    sender_name: "Home Assistant"
