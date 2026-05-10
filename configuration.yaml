@@ -125,21 +125,6 @@ template:
         state: "{{ state_attr('climate.my_spa_heater', 'current_temperature') | round(1) | float(1) }}"
         availability: "{{ state_attr('climate.my_spa_heater', 'current_temperature') | is_number }}"
 
-      # Kia e-Niro estimated remaining range converted from km to miles
-      - name: "Car Range"
-        unique_id: "template_sensor_car_range"
-        state_class: measurement
-        unit_of_measurement: "Mi"
-        state: "{{ (float(states('sensor.e_niro_ev_range')) * 0.621371) | round(0) }}"
-        availability: "{{ states('sensor.e_niro_ev_range') | is_number }}"
-
-      # Kia e-Niro total odometer reading converted from km to miles
-      - name: "Car Total ODO"
-        unique_id: "template_sensor_car_total_odo"
-        state_class: measurement
-        unit_of_measurement: "Mi"
-        state: "{{ (float(states('sensor.e_niro_odometer')) * 0.621371) | round(0) }}"
-        availability: "{{ states('sensor.e_niro_odometer') | is_number }}"
 
       # EcoFlow Stream 1 remaining runtime formatted as hours and minutes
       - name: "Stream 1 Runtime"
