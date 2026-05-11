@@ -34,7 +34,7 @@ advanced:
 mqtt:
   server: mqtt://10.10.10.146:1883
   user: ha
-  password: !secret zigbee2mqtt_mqtt_password
+  password: Tracy2025
 serial:
   adapter: zstack
   port: tcp://192.168.200.92:6638
