@@ -125,7 +125,6 @@ template:
         state: "{{ state_attr('climate.my_spa_heater', 'current_temperature') | round(1) | float(1) }}"
         availability: "{{ state_attr('climate.my_spa_heater', 'current_temperature') | is_number }}"
 
-
       # EcoFlow Stream 1 remaining runtime formatted as hours and minutes
       - name: "Stream 1 Runtime"
         unique_id: stream1_runtime_hours_minutes
@@ -197,11 +196,14 @@ template:
           {% set cap = 7.6 %}
           {% set eff = 0.86 %}
 
-          {% set headroom = 0.15 %}
+          {# was 0.15 #}
+          {% set headroom = 0.20 %}
 
           {# Base minimum SoC and reserve margin #}
           {% set soc_base = 0.32 %}
-          {% set soc_reserve = 0.05 %}
+
+          {# was 0.15 #}
+          {% set soc_reserve = 0.20 %}
 
           {# Morning load requirement (06:00–12:00) #}
           {% set E_morning_load = 1.8 %}
