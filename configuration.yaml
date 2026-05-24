@@ -197,13 +197,13 @@ template:
           {% set eff = 0.86 %}
 
           {# was 0.15 #}
-          {% set headroom = 0.10 %}
+          {% set headroom = 0.0 %}
 
           {# Base minimum SoC and reserve margin #}
           {% set soc_base = 0.32 %}
 
           {# was 0.15 #}
-          {% set soc_reserve = 0.05 %}
+          {% set soc_reserve = 0.00 %}
 
           {# Morning load requirement (06:00–12:00) #}
           {% set E_morning_load = 1.8 %}
