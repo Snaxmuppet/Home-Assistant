@@ -197,7 +197,7 @@ template:
           {% set eff = 0.86 %}
 
           {# was 0.15 #}
-          {% set headroom = 0.0 %}
+          {% set headroom = 0.05 %}
 
           {# Base minimum SoC and reserve margin #}
           {% set soc_base = 0.32 %}
