@@ -1,14 +1,13 @@
 - id: git_auto_commit
-  alias: "Git: Auto-commit config changes"
+  alias: 'Git: Auto-commit config changes'
   description: Commits and pushes any changed config files to GitHub every hour.
   trigger:
-    - platform: time_pattern
-      minutes: "0"
+  - platform: time_pattern
+    minutes: '0'
   condition: []
   action:
-    - action: shell_command.git_auto_commit
+  - action: shell_command.git_auto_commit
   mode: single
-
 - id: '1730317407231'
   alias: Kitchen Blind Position
   description: ''
@@ -142,7 +141,6 @@
           seconds: 2
           milliseconds: 0
   mode: single
-
 - id: '1738364036601'
   alias: Octopus Heating On
   description: ''
@@ -323,7 +321,6 @@
       entity_id: 3416679a5eb6b76f3d2367bc62908fad
       domain: switch
   mode: single
-
 - id: '1763971720960'
   alias: test 1
   description: ''
@@ -425,7 +422,6 @@
     target:
       entity_id: switch.garden_light
   mode: single
-
 - id: '1767075741419'
   alias: EcoFlow Charging Management - old
   description: Manages EcoFlow charging based on time, buttons, and SoC limits.
@@ -643,7 +639,7 @@
     at: 05:30:00
     id: no-heat
   - trigger: time
-    at: 01:30:00
+    at: 02:00:00
     id: heat
   - trigger: numeric_state
     entity_id:
