@@ -639,7 +639,7 @@
     at: 05:30:00
     id: no-heat
   - trigger: time
-    at: 03:00:00
+    at: 02:00:00
     id: heat
   - trigger: numeric_state
     entity_id:
